@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+requests
+motor
+pydantic
+python-multipart

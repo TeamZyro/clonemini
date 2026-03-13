@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clone Music Manager</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div id="loader" class="loader-container">
+        <div class="spinner"></div>
+    </div>
+
+    <div id="app" class="hidden">
+        <header>
+            <h1 id="page-title">My Cloned Bots</h1>
+            <button id="back-btn" class="hidden">← Back</button>
+        </header>
+
+        <main id="main-content">
+            <!-- Bot List View -->
+            <div id="bot-list" class="view">
+                <div class="bot-grid" id="bots-container">
+                    <!-- Bots will be injected here -->
+                </div>
+            </div>
+
+            <!-- Bot Edit View -->
+            <div id="bot-edit" class="view hidden">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-bot-id">
+                    
+                    <div class="input-group">
+                        <label>Bot Name</label>
+                        <input type="text" id="edit-name" placeholder="Enter bot name">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Logger Channel ID</label>
+                        <input type="text" id="edit-logchannel" placeholder="e.g. -100123456789">
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-item">
+                            <label>Show Owner Button</label>
+                            <input type="checkbox" id="edit-show-owner">
+                        </div>
+                        <div class="toggle-item">
+                            <label>Enable Logging</label>
+                            <input type="checkbox" id="edit-logging">
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Support Username</label>
+                        <input type="text" id="edit-support" placeholder="e.g. Zyroupdates">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Channel Username</label>
+                        <input type="text" id="edit-channel" placeholder="e.g. Zyroupdates">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Start Image</label>
+                        <div class="media-input">
+                            <input type="text" id="edit-start-img" placeholder="URL or upload image">
+                            <input type="file" id="upload-start-img" class="file-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('upload-start-img').click()">📤</button>
+                        </div>
+                        <div class="preview-container"><img id="preview-start-img" src="" class="img-preview hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Ping Image</label>
+                        <div class="media-input">
+                            <input type="text" id="edit-ping-img" placeholder="URL or upload image">
+                            <input type="file" id="upload-ping-img" class="file-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('upload-ping-img').click()">📤</button>
+                        </div>
+                        <div class="preview-container"><img id="preview-ping-img" src="" class="img-preview hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Playlist Image</label>
+                        <div class="media-input">
+                            <input type="text" id="edit-playlist-img" placeholder="URL or upload image">
+                            <input type="file" id="upload-playlist-img" class="file-input" accept="image/*">
+                            <button type="button" class="upload-btn" onclick="document.getElementById('upload-playlist-img').click()">📤</button>
+                        </div>
+                        <div class="preview-container"><img id="preview-playlist-img" src="" class="img-preview hidden"></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Start Message</label>
+                        <textarea id="edit-start-msg" rows="5" placeholder="Custom start message..."></textarea>
+                        <p class="hint">Placeholders: {mention}, {username}, {id}, {bot_mention}</p>
+                    </div>
+
+                    <button type="submit" class="save-btn">Save Changes</button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
