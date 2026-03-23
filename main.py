@@ -9,7 +9,7 @@ from typing import List, Optional
 
 # --- CONFIGURATION ---
 MONGO_DB_URI = os.getenv("MONGO_DB_URI", "mongodb+srv://harshmanjhi1801:webapp@cluster0.xxwc4.mongodb.net/?")
-IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "597b4dafe768f0e8e6a03f4e1b8b5010")
+IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "4d519772044bc125b2a6383c16732615")
 UPLOAD_API = os.getenv("UPLOAD_API", "https://api.imgbb.com/1/upload")
 
 app = FastAPI()
