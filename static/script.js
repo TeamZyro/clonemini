@@ -32,7 +32,8 @@ async function init() {
 
 async function fetchBots() {
     try {
-        const response = await fetch(`/api/bots/${STATE.user_id}`);
+        const headers = tele.initData ? { 'Authorization': `tma ${tele.initData}` } : {};
+        const response = await fetch(`/api/bots/${STATE.user_id}`, { headers });
         STATE.bots = await response.json();
     } catch (error) {
         console.error("Failed to fetch bots:", error);
@@ -168,9 +169,12 @@ editForm.onsubmit = async (e) => {
     };
 
     try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (tele.initData) headers['Authorization'] = `tma ${tele.initData}`;
+
         const response = await fetch('/api/update_bot', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: headers,
             body: JSON.stringify(payload)
         });
         
