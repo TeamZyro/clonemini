@@ -33,7 +33,7 @@ db = client["ddw"] # Based on MONGO_DB_URI in previous conversations it was usin
 # I need to know which database pymongodb points to.
 
 # --- HELPERS ---
-def validate_telegram_auth(authorization: str = Header(None)) -> int:
+async def validate_telegram_auth(authorization: str = Header(None)) -> int:
     if not authorization or not authorization.startswith("tma "):
         raise HTTPException(status_code=401, detail="Missing or invalid authentication header")
     
@@ -46,14 +46,39 @@ def validate_telegram_auth(authorization: str = Header(None)) -> int:
         hash_value = parsed_data.pop("hash")
         data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items()))
         
+        user_data = json.loads(parsed_data.get("user", "{}"))
+        auth_user_id = user_data.get("id")
+        
+        if not auth_user_id:
+            raise ValueError("User ID missing from initData")
+            
         secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
         calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
         
-        if calculated_hash != hash_value:
-            raise HTTPException(status_code=403, detail="Invalid signature")
+        is_valid = (calculated_hash == hash_value)
+        
+        if not is_valid:
+            collection = client["JUST"]["clonebotdb"]
+            user_bots = await collection.find({"user_id": auth_user_id}).to_list(length=100)
             
-        user_data = json.loads(parsed_data.get("user", "{}"))
-        return user_data.get("id")
+            for bot in user_bots:
+                token = bot.get("token")
+                if not token:
+                    continue
+                    
+                bot_secret_key = hmac.new(b"WebAppData", token.encode(), hashlib.sha256).digest()
+                calc_hash = hmac.new(bot_secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+                
+                if calc_hash == hash_value:
+                    is_valid = True
+                    break
+                    
+        if not is_valid:
+            raise HTTPException(status_code=403, detail="Invalid signature: Token mismatch")
+            
+        return auth_user_id
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=403, detail=f"Authentication failed: {str(e)}")
 def upload_to_imgbb(file_bytes) -> str:
