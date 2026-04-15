@@ -1,6 +1,10 @@
 import os
 import requests
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import hashlib
+import hmac
+import json
+from urllib.parse import parse_qsl
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Depends, Header
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -11,6 +15,7 @@ from typing import List, Optional
 MONGO_DB_URI = os.getenv("MONGO_DB_URI", "mongodb+srv://harshmanjhi1801:webapp@cluster0.xxwc4.mongodb.net/?")
 IMGBB_API_KEY = os.getenv("IMGBB_API_KEY", "4d519772044bc125b2a6383c16732615")
 UPLOAD_API = os.getenv("UPLOAD_API", "https://api.imgbb.com/1/upload")
+BOT_TOKEN = os.getenv("BOT_TOKEN", "8564094400:AAFsBAt3kVEh3skrAfDrifyqzwtA6IAY7Ik")
 
 app = FastAPI()
 
@@ -28,6 +33,29 @@ db = client["ddw"] # Based on MONGO_DB_URI in previous conversations it was usin
 # I need to know which database pymongodb points to.
 
 # --- HELPERS ---
+def validate_telegram_auth(authorization: str = Header(None)) -> int:
+    if not authorization or not authorization.startswith("tma "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authentication header")
+    
+    init_data = authorization[4:]
+    try:
+        parsed_data = dict(parse_qsl(init_data))
+        if "hash" not in parsed_data:
+            raise ValueError("No hash in data")
+            
+        hash_value = parsed_data.pop("hash")
+        data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed_data.items()))
+        
+        secret_key = hmac.new(b"WebAppData", BOT_TOKEN.encode(), hashlib.sha256).digest()
+        calculated_hash = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
+        
+        if calculated_hash != hash_value:
+            raise HTTPException(status_code=403, detail="Invalid signature")
+            
+        user_data = json.loads(parsed_data.get("user", "{}"))
+        return user_data.get("id")
+    except Exception as e:
+        raise HTTPException(status_code=403, detail=f"Authentication failed: {str(e)}")
 def upload_to_imgbb(file_bytes) -> str:
     """Upload image bytes to ImgBB and return the public URL."""
     files = {"image": file_bytes}
@@ -62,7 +90,9 @@ class BotUpdate(BaseModel):
 # --- ROUTES ---
 
 @app.get("/api/bots/{user_id}")
-async def get_user_bots(user_id: int):
+async def get_user_bots(user_id: int, auth_user_id: int = Depends(validate_telegram_auth)):
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized access: UID mismatch")
     collection = client["JUST"]["clonebotdb"] 
     cursor = collection.find({"user_id": user_id})
     bots = await cursor.to_list(length=100)
@@ -71,12 +101,15 @@ async def get_user_bots(user_id: int):
     return bots
 
 @app.post("/api/update_bot")
-async def update_bot(update: BotUpdate):
+async def update_bot(update: BotUpdate, auth_user_id: int = Depends(validate_telegram_auth)):
     collection = client["JUST"]["clonebotdb"]
     
     update_data = {k: v for k, v in update.dict().items() if v is not None}
     bot_id = update_data.pop("bot_id")
-    user_id = update_data.pop("user_id") # Security check needed here usually
+    user_id = update_data.pop("user_id")
+    
+    if user_id != auth_user_id:
+        raise HTTPException(status_code=403, detail="Unauthorized attempt to modify different user's bot")
     
     result = await collection.update_one(
         {"bot_id": bot_id, "user_id": user_id},
